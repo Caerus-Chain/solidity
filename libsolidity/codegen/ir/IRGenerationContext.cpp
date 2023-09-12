@@ -41,7 +41,7 @@ std::string IRGenerationContext::enqueueFunctionForCodeGeneration(FunctionDefini
 	std::string name = IRNames::function(_function);
 
 	if (!m_functions.contains(name))
-		m_functionGenerationQueue.insert(&_function);
+		m_functionGenerationQueue.push(&_function);
 
 	return name;
 }
@@ -50,8 +50,8 @@ FunctionDefinition const* IRGenerationContext::dequeueFunctionForCodeGeneration(
 {
 	solAssert(!m_functionGenerationQueue.empty(), "");
 
-	FunctionDefinition const* result = *m_functionGenerationQueue.begin();
-	m_functionGenerationQueue.erase(m_functionGenerationQueue.begin());
+	FunctionDefinition const* result = m_functionGenerationQueue.front();
+	m_functionGenerationQueue.pop();
 	return result;
 }
 
