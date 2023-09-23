@@ -45,6 +45,7 @@ int magicVariableToID(std::string const& _name)
 	else if (_name == "ecrecover") return -6;
 	else if (_name == "gasleft") return -7;
 	else if (_name == "keccak256") return -8;
+	else if (_name == "caerus") return -9; // @lukepark327
 	else if (_name == "msg") return -15;
 	else if (_name == "mulmod") return -16;
 	else if (_name == "now") return -17;
@@ -78,6 +79,7 @@ inline std::vector<std::shared_ptr<MagicVariableDeclaration const>> constructMag
 		magicVarDecl("ecrecover", TypeProvider::function(strings{"bytes32", "uint8", "bytes32", "bytes32"}, strings{"address"}, FunctionType::Kind::ECRecover, StateMutability::Pure)),
 		magicVarDecl("gasleft", TypeProvider::function(strings(), strings{"uint256"}, FunctionType::Kind::GasLeft, StateMutability::View)),
 		magicVarDecl("keccak256", TypeProvider::function(strings{"bytes memory"}, strings{"bytes32"}, FunctionType::Kind::KECCAK256, StateMutability::Pure)),
+		magicVarDecl("caerus", TypeProvider::function(strings{"address", "uint256", "uint256"}, strings{"bytes32"}, FunctionType::Kind::Caerus, StateMutability::View)), // @lukepark327
 		magicVarDecl("msg", TypeProvider::magic(MagicType::Kind::Message)),
 		magicVarDecl("mulmod", TypeProvider::function(strings{"uint256", "uint256", "uint256"}, strings{"uint256"}, FunctionType::Kind::MulMod, StateMutability::Pure)),
 		magicVarDecl("now", TypeProvider::uint256()),

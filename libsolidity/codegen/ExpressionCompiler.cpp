@@ -1057,12 +1057,14 @@ bool ExpressionCompiler::visit(FunctionCall const& _functionCall)
 		case FunctionType::Kind::ECRecover:
 		case FunctionType::Kind::SHA256:
 		case FunctionType::Kind::RIPEMD160:
+		case FunctionType::Kind::Caerus:
 		{
 			_functionCall.expression().accept(*this);
 			static std::map<FunctionType::Kind, u256> const contractAddresses{
 				{FunctionType::Kind::ECRecover, 1},
 				{FunctionType::Kind::SHA256, 2},
-				{FunctionType::Kind::RIPEMD160, 3}
+				{FunctionType::Kind::RIPEMD160, 3},
+				{FunctionType::Kind::Caerus, 19} // @lukepark327
 			};
 			m_context << contractAddresses.at(function.kind());
 			for (unsigned i = function.sizeOnStack(); i > 0; --i)
@@ -1627,6 +1629,7 @@ bool ExpressionCompiler::visit(MemberAccess const& _memberAccess)
 					case FunctionType::Kind::ECRecover:
 					case FunctionType::Kind::SHA256:
 					case FunctionType::Kind::RIPEMD160:
+					case FunctionType::Kind::Caerus:
 					default:
 						solAssert(false, "unsupported member function");
 					}
@@ -2694,6 +2697,14 @@ void ExpressionCompiler::appendExternalFunctionCall(
 		m_context << u256(32) << Instruction::ADD;
 		utils().storeFreeMemoryPointer();
 	}
+	if (funKind == FunctionType::Kind::Caerus)
+	{
+		solAssert(0 < retSize && retSize <= 32, "");
+		utils().fetchFreeMemoryPointer();
+		m_context << u256(0) << Instruction::DUP2 << Instruction::MSTORE;
+		m_context << u256(32) << Instruction::ADD;
+		utils().storeFreeMemoryPointer();
+	}
 
 	if (!m_context.evmVersion().canOverchargeGasForCall())
 	{
@@ -2726,6 +2737,8 @@ void ExpressionCompiler::appendExternalFunctionCall(
 		// This would be the only combination of padding and in-place encoding,
 		// but all parameters of ecrecover are value types anyway.
 		encodeInPlace = false;
+	if (_functionType.kind() == FunctionType::Kind::Caerus)
+		encodeInPlace = false;
 	bool encodeForLibraryCall = funKind == FunctionType::Kind::DelegateCall;
 	utils().encodeToMemory(
 		argumentTypes,
@@ -2754,6 +2767,12 @@ void ExpressionCompiler::appendExternalFunctionCall(
 		m_context << u256(32) << Instruction::DUP2 << Instruction::SUB << Instruction::SWAP1;
 		// Here: <input end> <output size> <outpos> <input pos>
 		m_context << Instruction::DUP1 << Instruction::DUP5 << Instruction::SUB;
+		m_context << Instruction::SWAP1;
+	}
+	else if (funKind == FunctionType::Kind::Caerus)
+	{
+		m_context << u256(32) << Instruction::DUP2 << Instruction::SUB << Instruction::SWAP1;
+		m_context << Instruction::DUP1 << Instruction::DUP4 << Instruction::SUB;
 		m_context << Instruction::SWAP1;
 	}
 	else
@@ -2866,6 +2885,12 @@ void ExpressionCompiler::appendExternalFunctionCall(
 	{
 		// Output is 32 bytes before input / free mem pointer.
 		// Failing ecrecover cannot be detected, so we clear output before the call.
+		m_context << u256(32);
+		utils().fetchFreeMemoryPointer();
+		m_context << Instruction::SUB << Instruction::MLOAD;
+	}
+	else if (funKind == FunctionType::Kind::Caerus)
+	{
 		m_context << u256(32);
 		utils().fetchFreeMemoryPointer();
 		m_context << Instruction::SUB << Instruction::MLOAD;

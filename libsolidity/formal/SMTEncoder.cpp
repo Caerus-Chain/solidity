@@ -687,6 +687,7 @@ void SMTEncoder::endVisit(FunctionCall const& _funCall)
 	case FunctionType::Kind::ECRecover:
 	case FunctionType::Kind::SHA256:
 	case FunctionType::Kind::RIPEMD160:
+	case FunctionType::Kind::Caerus:
 		visitCryptoFunction(_funCall);
 		break;
 	case FunctionType::Kind::BlockHash:
@@ -855,7 +856,20 @@ void SMTEncoder::visitCryptoFunction(FunctionCall const& _funCall)
 	auto kind = funType.kind();
 	auto arg0 = expr(*_funCall.arguments().at(0));
 	std::optional<smtutil::Expression> result;
-	if (kind == FunctionType::Kind::KECCAK256)
+	if (kind == FunctionType::Kind::Caerus)
+	{
+		auto c = state().cryptoFunction("caerus");
+		auto arg0 = expr(*_funCall.arguments().at(0));
+		auto arg1 = expr(*_funCall.arguments().at(1));
+		auto arg2 = expr(*_funCall.arguments().at(2));
+		auto inputSort = dynamic_cast<smtutil::ArraySort&>(*c.sort).domain;
+		auto caerusInput = smtutil::Expression::tuple_constructor(
+			smtutil::Expression(std::make_shared<smtutil::SortSort>(inputSort), ""),
+			{arg0, arg1, arg2}
+		);
+		result = smtutil::Expression::select(c, caerusInput);
+	}
+	else if (kind == FunctionType::Kind::KECCAK256)
 		result = smtutil::Expression::select(state().cryptoFunction("keccak256"), arg0);
 	else if (kind == FunctionType::Kind::SHA256)
 		result = smtutil::Expression::select(state().cryptoFunction("sha256"), arg0);

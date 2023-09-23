@@ -244,6 +244,18 @@ private:
 	BlockchainVariable m_crypto{
 		"crypto",
 		{
+			{"caerus", std::make_shared<smtutil::ArraySort>(
+				std::make_shared<smtutil::TupleSort>(
+					"caerus_input_type",
+					std::vector<std::string>{"address", "slot", "blockNumber"},
+					std::vector<smtutil::SortPointer>{
+						smt::smtSort(*TypeProvider::address()),
+						smt::smtSort(*TypeProvider::uint(256)),
+						smt::smtSort(*TypeProvider::uint(256))
+					}
+				),
+				smtSort(*TypeProvider::fixedBytes(32))
+			)},
 			{"keccak256", std::make_shared<smtutil::ArraySort>(
 				smt::smtSort(*TypeProvider::bytesStorage()),
 				smtSort(*TypeProvider::fixedBytes(32))
